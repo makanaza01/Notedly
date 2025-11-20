@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Article, Category } from '../types';
-import { draftArticleWithAI, polishContentWithAI } from '../services/geminiService';
+import { draftArticleWithAI } from '../services/geminiService';
 
 interface PostEditorProps {
   onSubmit: (article: Omit<Article, 'id' | 'likes' | 'date' | 'comments'>) => void;
@@ -25,7 +25,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ onSubmit, onCancel }) => {
   // AI State
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [aiMode, setAiMode] = useState<'none' | 'draft' | 'polish'>('none');
+  const [aiMode, setAiMode] = useState<'none' | 'draft'>('none');
 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,16 +62,6 @@ const PostEditor: React.FC<PostEditorProps> = ({ onSubmit, onCancel }) => {
       setSummary(result.summary);
       setAiMode('none');
       setAiPrompt('');
-    }
-  };
-
-  const handleAIPolish = async () => {
-    if (!content) return;
-    setIsGenerating(true);
-    const polished = await polishContentWithAI(content);
-    setIsGenerating(false);
-    if (polished) {
-      setContent(polished);
     }
   };
 
@@ -228,14 +218,6 @@ const PostEditor: React.FC<PostEditorProps> = ({ onSubmit, onCancel }) => {
           <div className="relative">
             <div className="flex justify-between items-center mb-1">
               <label className="block text-sm font-medium text-slate-700">Article Body</label>
-              <button 
-                type="button" 
-                onClick={handleAIPolish}
-                disabled={!content || isGenerating}
-                className="text-xs text-purple-600 hover:text-purple-800 font-medium flex items-center disabled:opacity-50"
-              >
-                 {isGenerating ? 'Polishing...' : '✨ AI Polish Grammar'}
-              </button>
             </div>
             <textarea
               rows={12}

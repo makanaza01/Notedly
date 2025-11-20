@@ -1,14 +1,27 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const apiKey = process.env.GEMINI_API_KEY;
+
+// We'll proceed without the API key, but the AI features will not work.
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export const draftArticleWithAI = async (topic: string): Promise<{ title: string; content: string; summary: string } | null> => {
+  if (!ai) {
+    console.warn("Gemini API key not set. Returning mock data.");
+    // Return mock data so the app can function without an API key.
+    return {
+      title: "AI Feature Disabled",
+      content: "The AI features are currently disabled because the Gemini API key is not configured. Please set the GEMINI_API_KEY environment variable to enable this feature.",
+      summary: "AI features are disabled."
+    };
+  }
+
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: `Write a school newspaper article about the following topic: "${topic}". 
-      The tone should be engaging, appropriate for a high school audience, and factual but creative.
-      Provide a catchy title, the full article content (approx 3 paragraphs), and a one-sentence summary.`,
+           The tone should be engaging, appropriate for a high school audience, and factual but creative.
+           Provide a catchy title, the full article content (approx 3 paragraphs), and a one-sentence summary.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -23,26 +36,10 @@ export const draftArticleWithAI = async (topic: string): Promise<{ title: string
       }
     });
 
-    const text = response.text;
-    if (!text) return null;
-    return JSON.parse(text);
+    if (!response.response.text) return null;
+    return JSON.parse(response.response.text());
   } catch (error) {
-    console.error("Error drafting article:", error);
-    return null;
-  }
-};
-
-export const polishContentWithAI = async (text: string): Promise<string | null> => {
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `Proofread and improve the flow of the following school news article content. 
-      Keep the original meaning but make it more professional and exciting. 
-      \n\nContent:\n${text}`,
-    });
-    return response.text || null;
-  } catch (error) {
-    console.error("Error polishing content:", error);
+    console.error("Error drafting article with AI:", error);
     return null;
   }
 };
